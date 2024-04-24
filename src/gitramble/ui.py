@@ -9,6 +9,8 @@ from textual.widgets import Button, Footer, Header, Label, Static
 from gitramble.app_data import AppData
 from gitramble.git_utils import GitLogItem, run_git_checkout_branch
 
+BRANCH_PREFIX = "gitramble-"
+
 
 class Commit(Static):
     def __init__(self, log_item: GitLogItem) -> None:
@@ -23,8 +25,9 @@ class Commit(Static):
             yield Button("Checkout", id="btn-checkout")
         yield Static(self.log_item.subject_msg, id="descr")
 
-    # def on_mount(self) -> None:
-    #     self.query_one("#btn-checkout").disabled = True
+    def on_mount(self) -> None:
+        if not self.app.app_data.repo_url:
+            self.query_one("#btn-commit").disabled = True
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-commit":
@@ -43,7 +46,7 @@ class Commit(Static):
             self.query_one("#btn-commit").disabled = True
 
     def checkout(self) -> None:
-        branch_name = f"commit-{self.log_item.abbrev_hash}"
+        branch_name = f"{BRANCH_PREFIX}{self.log_item.abbrev_hash}"
         output, errors = run_git_checkout_branch(
             self.app.app_options.run_path, branch_name, self.log_item.abbrev_hash
         )
