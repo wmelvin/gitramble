@@ -15,12 +15,11 @@ authors = [
 ]
 dependencies = [ "textual" ]
 
-# TODO:
-# [project.scripts]
-# gitramble = "gitramble.gitramble:main"
-#
-# [tool.setuptools.dynamic]
-# version = {attr = "gitramble.gitramble.__version__"}
+[project.scripts]
+gitramble = "gitramble.cli:cli"
+
+[tool.setuptools.dynamic]
+version = {attr = "gitramble.__about__.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

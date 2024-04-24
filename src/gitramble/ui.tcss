@@ -1,0 +1,42 @@
+
+Commit {
+    layout: horizontal;
+    border-top: solid gray;
+    min-height: 4;
+    min-width: 50;
+
+    Vertical {
+        background: $panel;
+        align: center top;
+        width: 20;
+        height: auto;
+        min-height: 3;
+        margin: 0;
+    }
+
+    Button {
+        border: none;
+        margin: 0;
+    }
+}
+
+#btn-commit {
+    color: $success;
+    width: 16;
+}
+
+#btn-checkout {
+    color: $warning;
+    width: 16;
+}
+
+#date {
+    color: $text;
+    width: 18;
+}
+
+#descr {
+    background: $boost;
+    margin-left: 1;
+    width: 1fr;
+}
