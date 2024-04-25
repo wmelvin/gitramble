@@ -16,8 +16,8 @@ class CommitInfo:
     abbrev_hash: str = ""
     author_date: str = ""
     subject_msg: str = ""
-    current: bool = False
-    selected: bool = False
+    current: int = 0
+    selected: int = 0
     note: str = ""
 
     def when_str(self) -> datetime:
@@ -83,8 +83,8 @@ class AppData:
                     commit.abbrev_hash = row["abbrev_hash"]  # Required field.
                     commit.author_date = row.get("author_date", "")
                     commit.subject_msg = row.get("subject_msg", "")
-                    commit.current = row.get("current", False)
-                    commit.selected = row.get("selected", False)
+                    commit.current = int(row.get("current", 0))
+                    commit.selected = int(row.get("selected", 0))
                     commit.note = row.get("note", "")
                     self.commits_data[commit.abbrev_hash] = commit
 
@@ -100,7 +100,7 @@ class AppData:
                     "selected",
                     "note",
                 ],
-                quoting=csv.QUOTE_MINIMAL,
+                quoting=csv.QUOTE_NONNUMERIC,
             )
             writer.writeheader()
             for commit in self.commits_data.values():
@@ -129,34 +129,39 @@ class AppData:
 
         # Clear the current flag for all commits.
         for commit in self.commits_data.values():
-            commit.current = False
+            commit.current = 0
 
         # Update commits_data from the latest log data.
         for log_item in log_items:
             if log_item.abbrev_hash in self.commits_data:
                 commit = self.commits_data[log_item.abbrev_hash]
                 commit.subject_msg = log_item.subject_msg
-                commit.current = True
+                commit.current = 1
             else:
                 self.commits_data[log_item.abbrev_hash] = CommitInfo(
                     abbrev_hash=log_item.abbrev_hash,
                     author_date=log_item.author_date,
                     subject_msg=log_item.subject_msg,
-                    current=True,
-                    selected=False,
+                    current=1,
+                    selected=0,
                 )
 
         # Save the updated commits_data.
         self.save_commits()
 
     def get_commits_current(self) -> list[CommitInfo]:
-        """Return a list of CommitInfo where current is True."""
+        """Return a list of CommitInfo where current is set."""
         return [commit for commit in self.commits_data.values() if commit.current]
 
-    def get_commits_selected(self) -> list[CommitInfo]:
-        """Return a list of CommitInfo where current and selected are True."""
-        return [
-            commit
-            for commit in self.commits_data.values()
-            if commit.current and commit.selected
-        ]
+    def set_selected(self, commit_hash: str, selected: int) -> None:
+        """Set the selected flag for a commit.
+
+        Args:
+            commit_hash (str): The abbreviated hash of the commit.
+            selected (int): The value to set the selected flag to.
+
+        """
+        if commit_hash not in self.commits_data:
+            return
+        self.commits_data[commit_hash].selected = selected
+        self.save_commits()

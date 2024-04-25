@@ -63,3 +63,7 @@ Checkbox {
 .selected #descr {
     text-style: bold;
 }
+
+.hidden {
+    display: none;
+}

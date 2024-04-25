@@ -33,6 +33,9 @@ class Commit(Static):
     def on_mount(self) -> None:
         if not self.app.app_data.repo_url:
             self.query_one("#btn-browser").disabled = True
+        if self.commit_info.selected:
+            self.add_class("selected")
+            self.query_one(Checkbox).value = True
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-browser":
@@ -44,8 +47,10 @@ class Commit(Static):
     def update_selected(self) -> None:
         if self.query_one(Checkbox).value:
             self.add_class("selected")
+            self.app.app_data.set_selected(self.commit_info.abbrev_hash, 1)
         else:
             self.remove_class("selected")
+            self.app.app_data.set_selected(self.commit_info.abbrev_hash, 0)
 
     def open_at_url(self) -> None:
         url = self.app.app_data.repo_url
@@ -72,12 +77,14 @@ class Commit(Static):
 class UI(App):
     def __init__(self, app_data: AppData) -> None:
         self.app_data = app_data
+        self.selected_only = False
         super().__init__()
 
     CSS_PATH = "ui.tcss"
 
     BINDINGS = [
         ("d", "toggle_dark", "Dark on/off"),
+        ("f", "filter_selected", "Filter on/off"),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -94,6 +101,15 @@ class UI(App):
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
+
+    def action_filter_selected(self) -> None:
+        self.selected_only = not self.selected_only
+        commits = self.query(Commit)
+        for commit in commits:
+            if self.selected_only and not commit.has_class("selected"):
+                commit.add_class("hidden")
+            else:
+                commit.remove_class("hidden")
 
     def action_exit_app(self) -> None:
         self.exit()
