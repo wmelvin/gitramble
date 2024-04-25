@@ -62,7 +62,7 @@ def run_git(run_path: Path, args: list[str]) -> subprocess.CompletedProcess:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        check=True,
+        check=False,
     )
 
 

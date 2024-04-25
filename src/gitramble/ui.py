@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import webbrowser
 
+from textual import on
 from textual.app import App, ComposeResult
-from textual.containers import ScrollableContainer, Vertical
-from textual.widgets import Button, Footer, Header, Label, Static
+from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.widgets import Button, Footer, Header, Label, Static, Switch
 
 from gitramble.app_data import AppData
 from gitramble.git_utils import GitLogItem, run_git_checkout_branch
@@ -19,6 +20,9 @@ class Commit(Static):
         self.id = f"c-{log_item.abbrev_hash}"
 
     def compose(self) -> ComposeResult:
+        with Horizontal(id="select-panel"):
+            yield Static("Select", id="select-label")
+            yield Switch(animate=False)
         with Vertical():
             yield Label(self.log_item.when_str(), id="date")
             yield Button(self.log_item.abbrev_hash, id="btn-commit")
@@ -34,6 +38,14 @@ class Commit(Static):
             self.open_at_url()
         elif event.button.id == "btn-checkout":
             self.checkout()
+
+    @on(Switch.Changed)
+    def update_selected(self) -> None:
+        selected = self.query_one(Switch).value
+        if selected:
+            self.query_one("#select-label").update("Selected")
+        else:
+            self.query_one("#select-label").update("Select")
 
     def open_at_url(self) -> None:
         url = self.app.app_data.repo_url

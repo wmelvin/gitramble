@@ -4,20 +4,36 @@ Commit {
     border-top: solid gray;
     min-height: 4;
     min-width: 50;
+}
 
-    Vertical {
-        background: $panel;
-        align: center top;
-        width: 20;
-        height: auto;
-        min-height: 3;
-        margin: 0;
-    }
+Vertical {
+    background: $panel;
+    align: center top;
+    width: 20;
+    height: auto;
+    min-height: 3;
+    margin: 0;
+}
 
-    Button {
-        border: none;
-        margin: 0;
-    }
+Button {
+    border: none;
+    margin: 0;
+}
+
+Switch {
+    height: auto;
+    width: auto;
+}
+
+#select-panel {
+    height: auto;
+    width: auto;
+}
+
+#select-label {
+    content-align: center middle;
+    height: 3;
+    width: 8;
 }
 
 #btn-commit {

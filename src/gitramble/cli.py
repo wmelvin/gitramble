@@ -60,7 +60,7 @@ def cli(arglist=None):
     git_log_output, git_log_errors = run_git_log(run_path)
 
     if git_log_errors:
-        rprint(f"\n[red]ERRORS:[/red]\n{git_log_errors}\n")
+        rprint(f"\n[yellow][b]ERRORS:[/b][/yellow]\n{git_log_errors}\n")
         sys.exit(1)
 
     commits = parse_git_log_output(git_log_output)

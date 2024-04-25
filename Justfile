@@ -1,3 +1,5 @@
+set dotenv-load
+
 @default:
   @just --list
 
@@ -27,4 +29,5 @@
 
 @checks: lint check test
 
-
+@tui:
+  pipenv run textual run --dev src/gitramble/cli.py $GRMBL_DIR -u $GRMBL_URL
