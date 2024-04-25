@@ -5,7 +5,7 @@ import webbrowser
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, ScrollableContainer, Vertical
-from textual.widgets import Button, Footer, Header, Label, Static, Switch
+from textual.widgets import Button, Checkbox, Footer, Header, Label, Static
 
 from gitramble.app_data import AppData
 from gitramble.git_utils import GitLogItem, run_git_checkout_branch
@@ -20,32 +20,31 @@ class Commit(Static):
         self.id = f"c-{log_item.abbrev_hash}"
 
     def compose(self) -> ComposeResult:
-        with Horizontal(id="select-panel"):
-            yield Static("Select", id="select-label")
-            yield Switch(animate=False)
-        with Vertical():
-            yield Label(self.log_item.when_str(), id="date")
-            yield Button(self.log_item.abbrev_hash, id="btn-commit")
-            yield Button("Checkout", id="btn-checkout")
+        with Vertical(id="panel"):
+            with Horizontal(id="panel-select"):
+                yield Checkbox()
+                yield Label(self.log_item.when_str(), id="date")
+            with Horizontal(id="panel-buttons"):
+                yield Button(self.log_item.abbrev_hash, id="btn-browser")
+                yield Button("Checkout", id="btn-checkout")
         yield Static(self.log_item.subject_msg, id="descr")
 
     def on_mount(self) -> None:
         if not self.app.app_data.repo_url:
-            self.query_one("#btn-commit").disabled = True
+            self.query_one("#btn-browser").disabled = True
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "btn-commit":
+        if event.button.id == "btn-browser":
             self.open_at_url()
         elif event.button.id == "btn-checkout":
             self.checkout()
 
-    @on(Switch.Changed)
+    @on(Checkbox.Changed)
     def update_selected(self) -> None:
-        selected = self.query_one(Switch).value
-        if selected:
-            self.query_one("#select-label").update("Selected")
+        if self.query_one(Checkbox).value:
+            self.add_class("selected")
         else:
-            self.query_one("#select-label").update("Select")
+            self.remove_class("selected")
 
     def open_at_url(self) -> None:
         url = self.app.app_data.repo_url
@@ -55,7 +54,7 @@ class Commit(Static):
         try:
             webbrowser.open(url)
         except Exception:
-            self.query_one("#btn-commit").disabled = True
+            self.query_one("#btn-browser").disabled = True
 
     def checkout(self) -> None:
         branch_name = f"{BRANCH_PREFIX}{self.log_item.abbrev_hash}"
