@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,17 +18,34 @@ class CommitInfo:
 class AppData:
     def __init__(self, run_path: Path, repo_url: str) -> None:
         self.repo_url = repo_url
+        self.run_path = run_path
         self.data_dir = run_path / APP_DATA_DIR
         if not self.data_dir.exists():
             self.data_dir.mkdir()
             (self.data_dir / ".gitignore").write_text(
                 "# Automatically created by gitramble.\n*\n"
             )
+        self.log_file = self.data_dir / "gitramble.log"
+        self._init_logging()
         self.settings_file = self.data_dir / "settings.csv"
         self.commits_file = self.data_dir / "commits.csv"
         self.commits: list[CommitInfo] = []
         self.load_settings()
         self.save_settings()
+
+    def _init_logging(self) -> None:
+        """Set up logging to a file.
+
+        This function will add a handler to the root logger.
+        """
+        if not self.log_file:
+            return
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        fh = logging.FileHandler(str(self.log_file), encoding="utf-8")
+        fmt = logging.Formatter("%(asctime)s %(message)s")
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
 
     def load_settings(self) -> None:
         # TODO: This will need to work differently if more settings are added.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import webbrowser
 
 from textual import on
@@ -58,9 +59,14 @@ class Commit(Static):
 
     def checkout(self) -> None:
         branch_name = f"{BRANCH_PREFIX}{self.log_item.abbrev_hash}"
+        logging.info(f"Checking out {branch_name}")
         output, errors = run_git_checkout_branch(
-            self.app.app_options.run_path, branch_name, self.log_item.abbrev_hash
+            self.app.app_data.run_path, branch_name, self.log_item.abbrev_hash
         )
+        logging.info(output)
+        if errors:
+            errors = f"Checkout failed for {self.log_item.abbrev_hash}:\n{errors}"
+            logging.error(errors)
 
 
 class UI(App):
