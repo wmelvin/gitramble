@@ -114,6 +114,8 @@ def run_git_checkout_branch(
 ) -> tuple[str, str]:
     """Create a new branch from a specific commit hash.
 
+    Do not create the branch if the repository is not clean.
+
     Args:
         run_path (Path): Path to the Git repository.
         branch_name (str): Name of the new branch.
@@ -122,6 +124,12 @@ def run_git_checkout_branch(
     Returns:
         tuple[str, str]: Output and error messages.
     """
+    out, err = run_git_status(run_path)
+    if out:
+        return "", "The repository is not clean. Commit or stash changes first."
+    if err:
+        return "", err
+
     result = run_git(
         run_path,
         ["checkout", "-b", branch_name, commit_hash],
