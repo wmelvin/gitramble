@@ -98,7 +98,7 @@ def run_git_log(run_path: Path) -> tuple[str, str]:
     if result is None:
         errors += "ERROR: Failed to run git command."
     elif result.returncode == 0:
-        output = result.stdout
+        output = result.stdout.strip()
     else:
         errors += f"ERROR ({result.returncode})\n"
         if result.stderr is not None:
@@ -130,7 +130,7 @@ def run_git_checkout_branch(
     if result is None:
         return "", "ERROR: Failed to run git command."
     if result.returncode == 0:
-        return result.stdout, ""
+        return result.stdout.strip(), ""
 
     errors = f"ERROR ({result.returncode})\n"
     if result.stderr is not None:
@@ -139,3 +139,44 @@ def run_git_checkout_branch(
         errors += f"STDOUT:\n{result.stdout}\n"
 
     return "", errors
+
+
+def run_git_status(run_path: Path) -> tuple[str, str]:
+    """Run 'git status' command.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+
+    Returns:
+        tuple[str, str]: Output and error messages.
+    """
+    result = run_git(run_path, ["status", "--porcelain"])
+
+    output = ""
+    errors = ""
+
+    if result is None:
+        errors += "ERROR: Failed to run git command."
+    elif result.returncode == 0:
+        output = result.stdout.strip()
+    else:
+        errors += f"ERROR ({result.returncode})\n"
+        if result.stderr is not None:
+            errors += f"STDERR:\n{result.stderr}\n"
+        if result.stdout is not None:
+            errors += f"STDOUT:\n{result.stdout}\n"
+
+    return output, errors
+
+
+def git_status_clean(run_path: Path) -> bool:
+    """Check if the Git repository is clean.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+
+    Returns:
+        bool: True if the repository is clean and there were no errors.
+    """
+    output, errors = run_git_status(run_path)
+    return not output and not errors
