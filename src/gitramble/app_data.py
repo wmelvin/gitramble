@@ -3,16 +3,25 @@ from __future__ import annotations
 import csv
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+
+from gitramble.git_utils import GitLogItem
 
 APP_DATA_DIR = ".gitramble"
 
 
 @dataclass
 class CommitInfo:
-    abbrev_hash: str
-    selected: bool
-    note: str
+    abbrev_hash: str = ""
+    author_date: str = ""
+    subject_msg: str = ""
+    current: bool = False
+    selected: bool = False
+    note: str = ""
+
+    def when_str(self) -> datetime:
+        return datetime.fromisoformat(self.author_date).strftime("%Y-%m-%d %H:%M")
 
 
 class AppData:
@@ -29,7 +38,7 @@ class AppData:
         self._init_logging()
         self.settings_file = self.data_dir / "settings.csv"
         self.commits_file = self.data_dir / "commits.csv"
-        self.commits: list[CommitInfo] = []
+        self.commits_data: dict[str, CommitInfo] = {}
         self.load_settings()
         self.save_settings()
 
@@ -68,12 +77,86 @@ class AppData:
     def load_commits(self) -> None:
         if self.commits_file.exists():
             with self.commits_file.open() as f:
-                reader = csv.reader(f)
+                reader = csv.DictReader(f)
                 for row in reader:
-                    self.commits.append(CommitInfo(*row))
+                    commit = CommitInfo()
+                    commit.abbrev_hash = row["abbrev_hash"]  # Required field.
+                    commit.author_date = row.get("author_date", "")
+                    commit.subject_msg = row.get("subject_msg", "")
+                    commit.current = row.get("current", False)
+                    commit.selected = row.get("selected", False)
+                    commit.note = row.get("note", "")
+                    self.commits_data[commit.abbrev_hash] = commit
 
     def save_commits(self) -> None:
         with self.commits_file.open("w") as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-            for commit in self.commits:
-                writer.writerow([commit.abbrev_hash, commit.selected, commit.note])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "abbrev_hash",
+                    "author_date",
+                    "subject_msg",
+                    "current",
+                    "selected",
+                    "note",
+                ],
+                quoting=csv.QUOTE_MINIMAL,
+            )
+            writer.writeheader()
+            for commit in self.commits_data.values():
+                writer.writerow(
+                    {
+                        "abbrev_hash": commit.abbrev_hash,
+                        "author_date": commit.author_date,
+                        "subject_msg": commit.subject_msg,
+                        "current": commit.current,
+                        "selected": commit.selected,
+                        "note": commit.note,
+                    }
+                )
+
+    def update_commits(self, log_items: list[GitLogItem]) -> None:
+        """Update the commits dictionary from the current git log data.
+
+        Args:
+            log_items (list[GitLogItem]): List of GitLogItem objects with the latest
+            commit.
+
+        """
+
+        # Load existing commits_data.
+        self.load_commits()
+
+        # Clear the current flag for all commits.
+        for commit in self.commits_data.values():
+            commit.current = False
+
+        # Update commits_data from the latest log data.
+        for log_item in log_items:
+            if log_item.abbrev_hash in self.commits_data:
+                commit = self.commits_data[log_item.abbrev_hash]
+                commit.subject_msg = log_item.subject_msg
+                commit.current = True
+            else:
+                self.commits_data[log_item.abbrev_hash] = CommitInfo(
+                    abbrev_hash=log_item.abbrev_hash,
+                    author_date=log_item.author_date,
+                    subject_msg=log_item.subject_msg,
+                    current=True,
+                    selected=False,
+                )
+
+        # Save the updated commits_data.
+        self.save_commits()
+
+    def get_commits_current(self) -> list[CommitInfo]:
+        """Return a list of CommitInfo where current is True."""
+        return [commit for commit in self.commits_data.values() if commit.current]
+
+    def get_commits_selected(self) -> list[CommitInfo]:
+        """Return a list of CommitInfo where current and selected are True."""
+        return [
+            commit
+            for commit in self.commits_data.values()
+            if commit.current and commit.selected
+        ]

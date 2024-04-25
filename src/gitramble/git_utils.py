@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 
@@ -14,9 +13,6 @@ class GitLogItem:
     abbrev_hash: str
     author_date: str
     subject_msg: str
-
-    def when_str(self) -> datetime:
-        return datetime.fromisoformat(self.author_date).strftime("%Y-%m-%d %H:%M")
 
 
 def parse_git_log_output(stdout: str) -> list[GitLogItem]:

@@ -65,7 +65,9 @@ def cli(arglist=None):
 
     commits = parse_git_log_output(git_log_output)
 
-    ui = UI(app_data, commits)
+    app_data.update_commits(commits)
+
+    ui = UI(app_data)
     ui.run()
 
 
