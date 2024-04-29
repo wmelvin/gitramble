@@ -9,7 +9,7 @@ from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.widgets import Button, Checkbox, Footer, Header, Label, Static
 
 from gitramble.app_data import AppData, CommitInfo
-from gitramble.git_utils import run_git_checkout_branch
+from gitramble.git_utils import run_git_branch_list, run_git_checkout_branch
 
 BRANCH_PREFIX = "gitramble-"
 
@@ -64,6 +64,14 @@ class Commit(Static):
 
     def checkout(self) -> None:
         branch_name = f"{BRANCH_PREFIX}{self.commit_info.abbrev_hash}"
+        lst_out, lst_err = run_git_branch_list(self.app.app_data.run_path)
+        if lst_err:
+            logging.error(lst_err)
+            # TODO: Show errors in the UI.
+            return
+        if branch_name in lst_out:
+            logging.info(f"Branch {branch_name} already exists.")
+            return
         logging.info(f"Checking out {branch_name}")
         output, errors = run_git_checkout_branch(
             self.app.app_data.run_path, branch_name, self.commit_info.abbrev_hash

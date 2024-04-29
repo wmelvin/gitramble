@@ -184,3 +184,31 @@ def git_status_clean(run_path: Path) -> bool:
     """
     output, errors = run_git_status(run_path)
     return not output and not errors
+
+
+def run_git_branch_list(run_path: Path) -> tuple[str, str]:
+    """Run 'git branch --list' command.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+
+    Returns:
+        tuple[str, str]: Output and error messages.
+    """
+    result = run_git(run_path, ["branch", "--list"])
+
+    output = ""
+    errors = ""
+
+    if result is None:
+        errors += "ERROR: Failed to run git command."
+    elif result.returncode == 0:
+        output = result.stdout.strip()
+    else:
+        errors += f"ERROR ({result.returncode})\n"
+        if result.stderr is not None:
+            errors += f"STDERR:\n{result.stderr}\n"
+        if result.stdout is not None:
+            errors += f"STDOUT:\n{result.stdout}\n"
+
+    return output, errors
