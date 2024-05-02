@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import logging
 import webbrowser
+from datetime import datetime
 
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, ScrollableContainer, Vertical
-from textual.widgets import Button, Checkbox, Footer, Header, Label, Static
+from textual.widgets import (
+    Button,
+    Checkbox,
+    Collapsible,
+    Footer,
+    Header,
+    Label,
+    RichLog,
+    Static,
+)
 
 from gitramble.app_data import AppData, CommitInfo
 from gitramble.git_utils import run_git_branch_list, run_git_checkout_branch
@@ -91,23 +101,34 @@ class UI(App):
     CSS_PATH = "ui.tcss"
 
     BINDINGS = [
-        ("d", "toggle_dark", "Dark on/off"),
-        ("f", "filter_selected", "Filter on/off"),
+        ("b", "show_branches", "Branches"),
+        ("d", "toggle_dark", "Dark mode"),
+        ("f", "filter_selected", "Filter"),
+        ("l", "toggle_log", "Log"),
         ("x", "exit_app", "Exit"),
     ]
 
     def compose(self) -> ComposeResult:
         yield Header()
         yield ScrollableContainer(id="commits")
+        with Collapsible(title="Log", id="log-area"):
+            yield RichLog(id="log")
         yield Footer()
 
     def on_mount(self) -> None:
         for commit in self.app_data.get_commits_current():
             new_commit = Commit(commit_info=commit)
             self.query_one("#commits").mount(new_commit)
+        self.say(f"Repository: {self.app_data.run_path}")
+
+    def action_show_branches(self) -> None:
+        lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
+        self.say(f"Branches:\n{lst_out}")
+        if lst_err:
+            self.say(f"\n{lst_err}")
+        self.query_one("#log-area").collapsed = False
 
     def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
         self.dark = not self.dark
 
     def action_filter_selected(self) -> None:
@@ -119,5 +140,14 @@ class UI(App):
             else:
                 commit.remove_class("hidden")
 
+    def action_toggle_log(self) -> None:
+        log_area: Collapsible = self.query_one("#log-area")
+        log_area.collapsed = not log_area.collapsed
+
     def action_exit_app(self) -> None:
         self.exit()
+
+    def say(self, message: str, console_text: str = "") -> None:
+        msg = message if console_text == "" else console_text
+        self.query_one(RichLog).write(f"{datetime.now().strftime('%H:%M:%S')} - {msg}")
+        logging.info("UI: %s", message)

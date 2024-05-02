@@ -19,6 +19,10 @@ Checkbox {
     dock: left;
 }
 
+#log-area {
+    max-height: 60%;
+}
+
 #panel {
     background: $panel;
     height: 2;
