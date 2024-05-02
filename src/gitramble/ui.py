@@ -77,19 +77,19 @@ class Commit(Static):
         lst_out, lst_err = run_git_branch_list(self.app.app_data.run_path)
         if lst_err:
             logging.error(lst_err)
-            # TODO: Show errors in the UI.
+            self.app.say(f"ERROR:\n{lst_err}")
             return
         if branch_name in lst_out:
-            logging.info(f"Branch {branch_name} already exists.")
+            self.app.say(f"Branch {branch_name} already exists.")
             return
-        logging.info(f"Checking out {branch_name}")
+        self.app.say(f"Checking out {branch_name}")
         output, errors = run_git_checkout_branch(
             self.app.app_data.run_path, branch_name, self.commit_info.abbrev_hash
         )
-        logging.info(output)
+        self.app.say(output)
         if errors:
             errors = f"Checkout failed for {self.commit_info.abbrev_hash}:\n{errors}"
-            logging.error(errors)
+            self.app.say(f"ERROR:\n{errors}")
 
 
 class UI(App):
@@ -123,7 +123,7 @@ class UI(App):
 
     def action_show_branches(self) -> None:
         lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
-        self.say(f"Branches:\n{lst_out}")
+        self.say(f"Branches:\n{lst_out}\n")
         if lst_err:
             self.say(f"\n{lst_err}")
         self.query_one("#log-area").collapsed = False
