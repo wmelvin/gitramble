@@ -26,6 +26,9 @@ where = ["src"]
 include = ["gitramble*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+gitramble = ["*.tcss"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 
