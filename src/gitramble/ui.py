@@ -90,6 +90,7 @@ class Commit(Static):
         if errors:
             errors = f"Checkout failed for {self.commit_info.abbrev_hash}:\n{errors}"
             self.app.say(f"ERROR:\n{errors}")
+        self.app.show_current_branch()
 
 
 class UI(App):
@@ -120,6 +121,7 @@ class UI(App):
             new_commit = Commit(commit_info=commit)
             self.query_one("#commits").mount(new_commit)
         self.say(f"Repository: {self.app_data.run_path}")
+        self.show_current_branch()
 
     def action_show_branches(self) -> None:
         lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
@@ -151,3 +153,14 @@ class UI(App):
         msg = message if console_text == "" else console_text
         self.query_one(RichLog).write(f"{datetime.now().strftime('%H:%M:%S')} - {msg}")
         logging.info("UI: %s", message)
+
+    def show_current_branch(self) -> None:
+        lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
+        if lst_err:
+            self.say(f"\n{lst_err}")
+            self.query_one("#log-area").collapsed = False
+        else:
+            for branch in lst_out.splitlines():
+                if branch.startswith("*"):
+                    self.title = f"GitRamble - ({branch[2:]})"
+                    break
