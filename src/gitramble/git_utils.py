@@ -212,3 +212,16 @@ def run_git_branch_list(run_path: Path) -> tuple[str, str]:
             errors += f"STDOUT:\n{result.stdout}\n"
 
     return output, errors
+
+
+def get_branch_list(run_path: Path) -> tuple[list[str], str]:
+    """Get a list of branches in the repository.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+
+    Returns:
+        tuple[list[str], str]: List of branches and error messages.
+    """
+    output, errors = run_git_branch_list(run_path)
+    return output.splitlines(), errors

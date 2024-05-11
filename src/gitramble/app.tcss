@@ -6,7 +6,7 @@ Commit {
     min-width: 50;
 }
 
-Button {
+#btn-browser, #btn-checkout {
     border: none;
     height: 1;
     min-width: 8;
@@ -70,4 +70,39 @@ Checkbox {
 
 .hidden {
     display: none;
+}
+
+
+/* BranchScreen */
+
+BranchScreen {
+    align: center middle;
+}
+
+#branch-dialog {
+    align: center bottom;
+    border: solid chocolate;
+    height: 20;
+    width: 50;
+}
+
+#branch-list {
+    border: solid gray;
+    height: auto;
+    padding: 1;
+}
+
+#branch-buttons {
+    align: center middle;
+    height: 5;
+}
+
+#btn-select {
+    color: $success;
+    margin: 0 4;
+}
+
+#btn-cancel {
+    color: $error;
+    margin: 0 4;
 }

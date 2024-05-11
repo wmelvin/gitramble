@@ -19,7 +19,12 @@ from textual.widgets import (
 )
 
 from gitramble.app_data import AppData, CommitInfo
-from gitramble.git_utils import run_git_branch_list, run_git_checkout_branch
+from gitramble.branch_screen import BranchScreen
+from gitramble.git_utils import (
+    get_branch_list,
+    run_git_branch_list,
+    run_git_checkout_branch,
+)
 
 BRANCH_PREFIX = "gitramble-"
 
@@ -99,10 +104,11 @@ class UI(App):
         self.selected_only = False
         super().__init__()
 
-    CSS_PATH = "ui.tcss"
+    CSS_PATH = "app.tcss"
 
     BINDINGS = [
         ("b", "show_branches", "Branches"),
+        ("c", "change_branch", "Change branch"),
         ("d", "toggle_dark", "Dark mode"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
@@ -128,6 +134,25 @@ class UI(App):
         self.say(f"Branches:\n{lst_out}\n")
         if lst_err:
             self.say(f"\n{lst_err}")
+        self.query_one("#log-area").collapsed = False
+
+    def action_change_branch(self) -> None:
+        lst_out, lst_err = get_branch_list(self.app_data.run_path)
+        if lst_err:
+            self.say(f"\n{lst_err}")
+            self.query_one("#log-area").collapsed = False
+            return
+        if not lst_out:
+            self.say("No branches available.")
+            return
+        self.push_screen(BranchScreen(lst_out), self.branch_screen_closed)
+
+    def branch_screen_closed(self, branch_name: str) -> None:
+        if branch_name:
+            self.say(f"Branch selected: {branch_name}")
+            # TODO: Implement branch checkout
+        else:
+            self.say("Branch selection cancelled")
         self.query_one("#log-area").collapsed = False
 
     def action_toggle_dark(self) -> None:
