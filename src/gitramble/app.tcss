@@ -20,6 +20,8 @@ Checkbox {
 }
 
 #log-area {
+    border-top: solid gray;
+    padding: 0;
     max-height: 60%;
 }
 

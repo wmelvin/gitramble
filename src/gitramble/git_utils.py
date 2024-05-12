@@ -105,7 +105,7 @@ def run_git_log(run_path: Path) -> tuple[str, str]:
     return output, errors
 
 
-def run_git_checkout_branch(
+def run_git_checkout_new_branch(
     run_path: Path, branch_name: str, commit_hash: str
 ) -> tuple[str, str]:
     """Create a new branch from a specific commit hash.
@@ -144,6 +144,41 @@ def run_git_checkout_branch(
 
     return "", errors
 
+
+def run_git_checkout_existing_branch(
+    run_path: Path, branch_name: str
+) -> tuple[str, str]:
+    """Checkout an existing branch.
+
+    Do not run checkout if the repository is not clean.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+        branch_name (str): Name of the branch to checkout.
+
+    Returns:
+        tuple[str, str]: Output and error messages.
+    """
+    out, err = run_git_status(run_path)
+    if out:
+        return "", "The repository is not clean. Commit or stash changes first."
+    if err:
+        return "", err
+
+    result = run_git(run_path, ["checkout", branch_name])
+
+    if result is None:
+        return "", "ERROR: Failed to run git command."
+    if result.returncode == 0:
+        return result.stdout.strip(), ""
+
+    errors = f"ERROR ({result.returncode})\n"
+    if result.stderr is not None:
+        errors += f"STDERR:\n{result.stderr}\n"
+    if result.stdout is not None:
+        errors += f"STDOUT:\n{result.stdout}\n"
+
+    return "", errors
 
 def run_git_status(run_path: Path) -> tuple[str, str]:
     """Run 'git status' command.
@@ -214,17 +249,17 @@ def run_git_branch_list(run_path: Path) -> tuple[str, str]:
     return output, errors
 
 
-def get_branch_list(run_path: Path) -> tuple[list[str], str]:
-    """Get a list of branches in the repository.
+# def get_branch_list_raw(run_path: Path) -> tuple[list[str], str]:
+#     """Get a list of branches in the repository.
 
-    Args:
-        run_path (Path): Path to the Git repository.
+#     Args:
+#         run_path (Path): Path to the Git repository.
 
-    Returns:
-        tuple[list[str], str]: List of branches and error messages.
-    """
-    output, errors = run_git_branch_list(run_path)
-    return output.splitlines(), errors
+#     Returns:
+#         tuple[list[str], str]: List of branches and error messages.
+#     """
+#     output, errors = run_git_branch_list(run_path)
+#     return output.splitlines(), errors
 
 
 def get_branch_info(run_path: Path) -> tuple[list[str], str, str]:

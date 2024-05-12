@@ -22,9 +22,9 @@ from gitramble.app_data import AppData, CommitInfo
 from gitramble.branch_screen import BranchScreen
 from gitramble.git_utils import (
     get_branch_info,
-    get_branch_list,
     run_git_branch_list,
-    run_git_checkout_branch,
+    run_git_checkout_existing_branch,
+    run_git_checkout_new_branch,
 )
 
 BRANCH_PREFIX = "gitramble-"
@@ -91,7 +91,7 @@ class Commit(Static):
             self.app.say(f"Branch {branch_name} already exists.")
             return
         self.app.say(f"Checking out {branch_name}")
-        co_out, co_err = run_git_checkout_branch(
+        co_out, co_err = run_git_checkout_new_branch(
             self.app.app_data.run_path, branch_name, self.commit_info.abbrev_hash
         )
         self.app.say(co_out)
@@ -122,7 +122,7 @@ class UI(App):
         yield Header()
         yield ScrollableContainer(id="commits")
         with Collapsible(title="Log", id="log-area"):
-            yield RichLog(id="log")
+            yield RichLog(highlight=True, markup=True, id="log")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -140,7 +140,7 @@ class UI(App):
         self.query_one("#log-area").collapsed = False
 
     def action_change_branch(self) -> None:
-        lst, err = get_branch_list(self.app_data.run_path)
+        lst, _, err = get_branch_info(self.app_data.run_path)
         if err:
             self.say(f"\n{err}")
             self.query_one("#log-area").collapsed = False
@@ -153,7 +153,20 @@ class UI(App):
     def branch_screen_closed(self, branch_name: str) -> None:
         if branch_name:
             self.say(f"Branch selected: {branch_name}")
-            # TODO: Implement branch checkout
+            _, cur, err = get_branch_info(self.app_data.run_path)
+            if err:
+                self.say(f"\n{err}")
+                self.query_one("#log-area").collapsed = False
+                return
+            if branch_name == cur:
+                self.say("Already on that branch.")
+                return
+            out, err = run_git_checkout_existing_branch(
+                self.app_data.run_path, branch_name
+            )
+            self.say(out)
+            if err:
+                self.say(f"ERROR:\n{err}")
         else:
             self.say("Branch selection cancelled")
         self.query_one("#log-area").collapsed = False
