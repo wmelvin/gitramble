@@ -62,7 +62,7 @@ class AppData:
             # If we already have a repo URL, don't overwrite it.
             return
         if self.settings_file.exists():
-            with self.settings_file.open() as f:
+            with self.settings_file.open(newline="") as f:
                 reader = csv.reader(f)
                 for row in reader:
                     if row[0] == "repo_url":
@@ -76,7 +76,7 @@ class AppData:
 
     def load_commits(self) -> None:
         if self.commits_file.exists():
-            with self.commits_file.open() as f:
+            with self.commits_file.open(newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     commit = CommitInfo()
@@ -89,7 +89,7 @@ class AppData:
                     self.commits_data[commit.abbrev_hash] = commit
 
     def save_commits(self) -> None:
-        with self.commits_file.open("w") as f:
+        with self.commits_file.open("w", newline="") as f:
             writer = csv.DictWriter(
                 f,
                 fieldnames=[
