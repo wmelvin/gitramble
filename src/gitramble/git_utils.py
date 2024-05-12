@@ -225,3 +225,27 @@ def get_branch_list(run_path: Path) -> tuple[list[str], str]:
     """
     output, errors = run_git_branch_list(run_path)
     return output.splitlines(), errors
+
+
+def get_branch_info(run_path: Path) -> tuple[list[str], str, str]:
+    """Get a list of branches in the repository.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+
+    Returns:
+        tuple[list[str], str, str]: List of branches, current branch,
+        and error messages.
+    """
+    output, errors = run_git_branch_list(run_path)
+    branches = output.splitlines()
+    out_branches = []
+    current_branch = ""
+    for b in branches:
+        if b.startswith("*"):
+            current_branch = b[1:].strip()
+            out_branches.append(current_branch)
+        else:
+            out_branches.append(b.strip())
+
+    return out_branches, current_branch, errors

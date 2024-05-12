@@ -21,6 +21,7 @@ from textual.widgets import (
 from gitramble.app_data import AppData, CommitInfo
 from gitramble.branch_screen import BranchScreen
 from gitramble.git_utils import (
+    get_branch_info,
     get_branch_list,
     run_git_branch_list,
     run_git_checkout_branch,
@@ -71,6 +72,8 @@ class Commit(Static):
         url = self.app.app_data.repo_url
         if not url:
             return
+        # This assumes a GitHub URL scheme.
+        # TODO: Add options for other providers?
         url = f"{url}/commit/{self.commit_info.abbrev_hash}"
         try:
             webbrowser.open(url)
@@ -79,22 +82,22 @@ class Commit(Static):
 
     def checkout(self) -> None:
         branch_name = f"{BRANCH_PREFIX}{self.commit_info.abbrev_hash}"
-        lst_out, lst_err = run_git_branch_list(self.app.app_data.run_path)
-        if lst_err:
-            logging.error(lst_err)
-            self.app.say(f"ERROR:\n{lst_err}")
+        ls_out, ls_err = run_git_branch_list(self.app.app_data.run_path)
+        if ls_err:
+            logging.error(ls_err)
+            self.app.say(f"ERROR:\n{ls_err}")
             return
-        if branch_name in lst_out:
+        if branch_name in ls_out:
             self.app.say(f"Branch {branch_name} already exists.")
             return
         self.app.say(f"Checking out {branch_name}")
-        output, errors = run_git_checkout_branch(
+        co_out, co_err = run_git_checkout_branch(
             self.app.app_data.run_path, branch_name, self.commit_info.abbrev_hash
         )
-        self.app.say(output)
-        if errors:
-            errors = f"Checkout failed for {self.commit_info.abbrev_hash}:\n{errors}"
-            self.app.say(f"ERROR:\n{errors}")
+        self.app.say(co_out)
+        if co_err:
+            co_err = f"Checkout failed for {self.commit_info.abbrev_hash}:\n{co_err}"
+            self.app.say(f"ERROR:\n{co_err}")
         self.app.show_current_branch()
 
 
@@ -130,22 +133,22 @@ class UI(App):
         self.show_current_branch()
 
     def action_show_branches(self) -> None:
-        lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
-        self.say(f"Branches:\n{lst_out}\n")
-        if lst_err:
-            self.say(f"\n{lst_err}")
+        out, err = run_git_branch_list(self.app_data.run_path)
+        self.say(f"Branches:\n{out}\n")
+        if err:
+            self.say(f"\n{err}")
         self.query_one("#log-area").collapsed = False
 
     def action_change_branch(self) -> None:
-        lst_out, lst_err = get_branch_list(self.app_data.run_path)
-        if lst_err:
-            self.say(f"\n{lst_err}")
+        lst, err = get_branch_list(self.app_data.run_path)
+        if err:
+            self.say(f"\n{err}")
             self.query_one("#log-area").collapsed = False
             return
-        if not lst_out:
+        if not lst:
             self.say("No branches available.")
             return
-        self.push_screen(BranchScreen(lst_out), self.branch_screen_closed)
+        self.push_screen(BranchScreen(lst), self.branch_screen_closed)
 
     def branch_screen_closed(self, branch_name: str) -> None:
         if branch_name:
@@ -180,12 +183,9 @@ class UI(App):
         logging.info("UI: %s", message)
 
     def show_current_branch(self) -> None:
-        lst_out, lst_err = run_git_branch_list(self.app_data.run_path)
-        if lst_err:
-            self.say(f"\n{lst_err}")
+        _, cur, err = get_branch_info(self.app_data.run_path)
+        if err:
+            self.say(f"\n{err}")
             self.query_one("#log-area").collapsed = False
-        else:
-            for branch in lst_out.splitlines():
-                if branch.startswith("*"):
-                    self.title = f"GitRamble - ({branch[2:]})"
-                    break
+            return
+        self.title = f"gitramble (branch: {cur})"
