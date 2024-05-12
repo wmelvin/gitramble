@@ -115,6 +115,7 @@ class UI(App):
         ("d", "toggle_dark", "Dark mode"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
+        # ("t", "try_stuff", "Try"),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -122,7 +123,9 @@ class UI(App):
         yield Header()
         yield ScrollableContainer(id="commits")
         with Collapsible(title="Log", id="log-area"):
-            yield RichLog(highlight=True, markup=True, id="log")
+            yield RichLog(
+                wrap=True, highlight=True, markup=True, auto_scroll=True, id="log"
+            )
         yield Footer()
 
     def on_mount(self) -> None:
@@ -132,21 +135,29 @@ class UI(App):
         self.say(f"Repository: {self.app_data.run_path}")
         self.show_current_branch()
 
+    def say(
+        self, message: str, pre: str = "", no_dt: bool = False, pop: bool = False
+    ) -> None:
+        logging.info("UI: %s", message)
+        dt = "" if no_dt else f"{datetime.now().strftime('%H:%M:%S')} - "
+        self.query_one(RichLog).write(f"{dt}{pre}{message}")
+        if pop:
+            self.query_one("#log-area").collapsed = False
+
     def action_show_branches(self) -> None:
         out, err = run_git_branch_list(self.app_data.run_path)
-        self.say(f"Branches:\n{out}\n")
+        self.say("Branches:", pop=True)
+        self.say(f"\n{out}", pre="[bold]", no_dt=True)
         if err:
-            self.say(f"\n{err}")
-        self.query_one("#log-area").collapsed = False
+            self.say(f"ERRORS:\n{err}", pre="[bold red]")
 
     def action_change_branch(self) -> None:
         lst, _, err = get_branch_info(self.app_data.run_path)
         if err:
-            self.say(f"\n{err}")
-            self.query_one("#log-area").collapsed = False
+            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
             return
         if not lst:
-            self.say("No branches available.")
+            self.say("No branches available.", pop=True)
             return
         self.push_screen(BranchScreen(lst), self.branch_screen_closed)
 
@@ -155,21 +166,19 @@ class UI(App):
             self.say(f"Branch selected: {branch_name}")
             _, cur, err = get_branch_info(self.app_data.run_path)
             if err:
-                self.say(f"\n{err}")
-                self.query_one("#log-area").collapsed = False
+                self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
                 return
             if branch_name == cur:
-                self.say("Already on that branch.")
+                self.say("Already on that branch.", pop=True)
                 return
             out, err = run_git_checkout_existing_branch(
                 self.app_data.run_path, branch_name
             )
-            self.say(out)
+            self.say(f"\n{out}", pop=True)
             if err:
-                self.say(f"ERROR:\n{err}")
+                self.say(f"ERRORS:\n{err}", pre="[bold red]")
         else:
-            self.say("Branch selection cancelled")
-        self.query_one("#log-area").collapsed = False
+            self.say("Branch selection cancelled", pop=True)
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
@@ -187,18 +196,15 @@ class UI(App):
         log_area: Collapsible = self.query_one("#log-area")
         log_area.collapsed = not log_area.collapsed
 
+    # def action_try_stuff(self) -> None:
+    #     self.say("blah " * 50)
+
     def action_exit_app(self) -> None:
         self.exit()
-
-    def say(self, message: str, console_text: str = "") -> None:
-        msg = message if console_text == "" else console_text
-        self.query_one(RichLog).write(f"{datetime.now().strftime('%H:%M:%S')} - {msg}")
-        logging.info("UI: %s", message)
 
     def show_current_branch(self) -> None:
         _, cur, err = get_branch_info(self.app_data.run_path)
         if err:
-            self.say(f"\n{err}")
-            self.query_one("#log-area").collapsed = False
+            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
             return
         self.title = f"gitramble (branch: {cur})"

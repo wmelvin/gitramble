@@ -180,6 +180,7 @@ def run_git_checkout_existing_branch(
 
     return "", errors
 
+
 def run_git_status(run_path: Path) -> tuple[str, str]:
     """Run 'git status' command.
 
