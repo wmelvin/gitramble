@@ -21,13 +21,13 @@ from textual.widgets import (
 from gitramble.app_data import AppData, CommitInfo
 from gitramble.branch_screen import BranchScreen
 from gitramble.git_utils import (
+    APP_BRANCH_PREFIX,
+    delete_gitramble_branch,
     get_branch_info,
     run_git_branch_list,
     run_git_checkout_existing_branch,
     run_git_checkout_new_branch,
 )
-
-BRANCH_PREFIX = "gitramble-"
 
 
 class Commit(Static):
@@ -81,7 +81,7 @@ class Commit(Static):
             self.query_one("#btn-browser").disabled = True
 
     def checkout(self) -> None:
-        branch_name = f"{BRANCH_PREFIX}{self.commit_info.abbrev_hash}"
+        branch_name = f"{APP_BRANCH_PREFIX}{self.commit_info.abbrev_hash}"
         ls_out, ls_err = run_git_branch_list(self.app.app_data.run_path)
         if ls_err:
             logging.error(ls_err)
@@ -111,11 +111,12 @@ class UI(App):
 
     BINDINGS = [
         ("b", "show_branches", "Branches"),
-        ("c", "change_branch", "Change branch"),
-        ("d", "toggle_dark", "Dark mode"),
+        ("c", "change_branch", "Change"),
+        ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
         # ("t", "try_stuff", "Try"),
+        ("u", "toggle_dark", "UI mode"),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -140,7 +141,7 @@ class UI(App):
     ) -> None:
         logging.info("UI: %s", message)
         dt = "" if no_dt else f"{datetime.now().strftime('%H:%M:%S')} - "
-        self.query_one(RichLog).write(f"{dt}{pre}{message}")
+        self.query_one(RichLog).write(f"{dt}{pre}{message}\n")
         if pop:
             self.query_one("#log-area").collapsed = False
 
@@ -152,6 +153,12 @@ class UI(App):
             self.say(f"ERRORS:\n{err}", pre="[bold red]")
 
     def action_change_branch(self) -> None:
+        self.open_branch_screen("change")
+
+    def action_delete_branch(self) -> None:
+        self.open_branch_screen("delete")
+
+    def open_branch_screen(self, action: str) -> None:
         lst, _, err = get_branch_info(self.app_data.run_path)
         if err:
             self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
@@ -159,26 +166,18 @@ class UI(App):
         if not lst:
             self.say("No branches available.", pop=True)
             return
-        self.push_screen(BranchScreen(lst), self.branch_screen_closed)
+        self.push_screen(BranchScreen(action, lst), self.branch_screen_closed)
 
-    def branch_screen_closed(self, branch_name: str) -> None:
-        if branch_name:
-            self.say(f"Branch selected: {branch_name}")
-            _, cur, err = get_branch_info(self.app_data.run_path)
-            if err:
-                self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
-                return
-            if branch_name == cur:
-                self.say("Already on that branch.", pop=True)
-                return
-            out, err = run_git_checkout_existing_branch(
-                self.app_data.run_path, branch_name
-            )
-            self.say(f"\n{out}", pop=True)
-            if err:
-                self.say(f"ERRORS:\n{err}", pre="[bold red]")
-        else:
-            self.say("Branch selection cancelled", pop=True)
+    def branch_screen_closed(self, action_branch: str) -> None:
+        if not action_branch:
+            self.say("Branch selection cancelled.", pop=True)
+            return
+        action, branch_name = action_branch.split(":")
+        self.say(f"Branch selected: {branch_name}")
+        if action == "change":
+            self.checkout_branch(branch_name)
+        elif action == "delete":
+            self.delete_branch(branch_name)
 
     def action_toggle_dark(self) -> None:
         self.dark = not self.dark
@@ -208,3 +207,29 @@ class UI(App):
             self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
             return
         self.title = f"gitramble (branch: {cur})"
+
+    def checkout_branch(self, branch_name: str) -> None:
+        _, cur, err = get_branch_info(self.app_data.run_path)
+        if err:
+            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+            return
+        if branch_name == cur:
+            self.say("Already on that branch.", pop=True)
+            return
+        out, err = run_git_checkout_existing_branch(self.app_data.run_path, branch_name)
+        self.say(f"\n{out}", pop=True)
+        if err:
+            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+
+    def delete_branch(self, branch_name: str) -> None:
+        _, cur, err = get_branch_info(self.app_data.run_path)
+        if err:
+            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+            return
+        if branch_name == cur:
+            self.say("Cannot delete the current branch.", pop=True)
+            return
+        out, err = delete_gitramble_branch(self.app_data.run_path, branch_name)
+        self.say(f"\n{out}", pop=True)
+        if err:
+            self.say(f"ERRORS:\n{err}", pre="[bold red]")

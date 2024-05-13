@@ -7,7 +7,8 @@ from textual.widgets import Button, Label, ListItem, ListView
 
 
 class BranchScreen(ModalScreen[str]):
-    def __init__(self, branch_list: list[str]) -> None:
+    def __init__(self, action: str, branch_list: list[str]) -> None:
+        self.action = action
         self.branches = branch_list
         self.selected_branch = None
         super().__init__()
@@ -33,7 +34,10 @@ class BranchScreen(ModalScreen[str]):
         self.selected_branch = self.branches[ix]
 
     def close_screen(self, branch: str) -> None:
-        self.dismiss(branch)
+        if branch:
+            self.dismiss(f"{self.action}:{branch}")
+        else:
+            self.dismiss("")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-select":

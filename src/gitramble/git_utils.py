@@ -6,6 +6,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+APP_BRANCH_PREFIX = "gitramble-"
+
 
 @dataclass
 class GitLogItem:
@@ -250,19 +252,6 @@ def run_git_branch_list(run_path: Path) -> tuple[str, str]:
     return output, errors
 
 
-# def get_branch_list_raw(run_path: Path) -> tuple[list[str], str]:
-#     """Get a list of branches in the repository.
-
-#     Args:
-#         run_path (Path): Path to the Git repository.
-
-#     Returns:
-#         tuple[list[str], str]: List of branches and error messages.
-#     """
-#     output, errors = run_git_branch_list(run_path)
-#     return output.splitlines(), errors
-
-
 def get_branch_info(run_path: Path) -> tuple[list[str], str, str]:
     """Get a list of branches in the repository.
 
@@ -285,3 +274,26 @@ def get_branch_info(run_path: Path) -> tuple[list[str], str, str]:
             out_branches.append(b.strip())
 
     return out_branches, current_branch, errors
+
+
+def delete_gitramble_branch(run_path: Path, branch_name: str) -> tuple[str, str]:
+    if not branch_name.startswith(APP_BRANCH_PREFIX):
+        return "", "Can only delete branches created by this application."
+
+    result = run_git(run_path, ["branch", "-d", branch_name])
+
+    output = ""
+    errors = ""
+
+    if result is None:
+        errors += "ERROR: Failed to run git command."
+    elif result.returncode == 0:
+        output = result.stdout.strip()
+    else:
+        errors += f"ERROR ({result.returncode})\n"
+        if result.stderr is not None:
+            errors += f"STDERR:\n{result.stderr}\n"
+        if result.stdout is not None:
+            errors += f"STDOUT:\n{result.stdout}\n"
+
+    return output, errors
