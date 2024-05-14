@@ -39,10 +39,6 @@ class Commit(Static):
         self.commit_info = commit_info
         self.id = f"c-{commit_info.abbrev_hash}"
 
-    BINDINGS = [
-        ("n", "show_note", "Note"),
-    ]
-
     def compose(self) -> ComposeResult:
         with Horizontal(id="panel-commit"):
             with Vertical(id="panel"):
@@ -50,16 +46,13 @@ class Commit(Static):
                     yield Checkbox()
                     yield Label(self.commit_info.when_str(), id="date")
                 with Horizontal(id="panel-buttons"):
+                    yield Button("...", id="btn-note")
                     yield Button(self.commit_info.abbrev_hash, id="btn-browser")
                     yield Button("Checkout", id="btn-checkout")
             yield Static(self.commit_info.subject_msg, id="descr")
         with Horizontal(id="panel-note"):
             yield Label("Note:")
             yield Input(self.commit_info.note, max_length=60, id="input-note")
-
-    def action_show_note(self) -> None:
-        self.query_one("#panel-note").add_class("noted")
-        self.query_one("#input-note").focus()
 
     def on_mount(self) -> None:
         if not self.app.app_data.repo_url:
@@ -68,13 +61,20 @@ class Commit(Static):
             self.add_class("selected")
             self.query_one(Checkbox).value = True
         if self.commit_info.note:
-            self.query_one("#panel-note").add_class("noted")
+            self.add_class("noted")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-browser":
             self.open_at_url()
         elif event.button.id == "btn-checkout":
             self.checkout()
+        elif event.button.id == "btn-note":
+            if self.has_class("noted"):
+                if not self.commit_info.note:
+                    self.remove_class("noted")
+            else:
+                self.add_class("noted")
+                self.query_one("#input-note").focus()
 
     @on(Checkbox.Changed)
     def update_selected(self) -> None:
@@ -119,7 +119,7 @@ class UI(App):
         ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
-        ("u", "toggle_dark", "UI mode"),
+        # ("u", "toggle_dark", "Mode"),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -202,8 +202,8 @@ class UI(App):
         elif action == "delete":
             self.delete_branch(branch_name)
 
-    def action_toggle_dark(self) -> None:
-        self.dark = not self.dark
+    # def action_toggle_dark(self) -> None:
+    #     self.dark = not self.dark
 
     def action_filter_selected(self) -> None:
         self.selected_only = not self.selected_only

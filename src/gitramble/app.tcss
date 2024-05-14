@@ -19,11 +19,12 @@ Commit {
     display: none;
 }
 
-#panel-note.noted {
+.noted #panel-note {
     display: block;
 }
 
 #panel-note Label {
+    color: darkgoldenrod;
     margin-left: 1;
 }
 
@@ -32,6 +33,18 @@ Commit {
     height: 1;
     margin: 0 1;
     width: 62;
+}
+
+#btn-note {
+    border: none;
+    color: darkgoldenrod;
+    height: 1;
+    min-width: 1;
+    margin: 0;
+}
+
+.noted #btn-note {
+    color: slategray;
 }
 
 #panel-commit {
