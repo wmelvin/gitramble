@@ -25,9 +25,11 @@ from gitramble.git_utils import (
     APP_BRANCH_PREFIX,
     delete_gitramble_branch,
     get_branch_info,
+    parse_git_log_output,
     run_git_branch_list,
     run_git_checkout_existing_branch,
     run_git_checkout_new_branch,
+    run_git_log,
 )
 
 
@@ -100,24 +102,7 @@ class Commit(Static):
             self.query_one("#btn-browser").disabled = True
 
     def checkout(self) -> None:
-        branch_name = f"{APP_BRANCH_PREFIX}{self.commit_info.abbrev_hash}"
-        ls_out, ls_err = run_git_branch_list(self.app.app_data.run_path)
-        if ls_err:
-            logging.error(ls_err)
-            self.app.say(f"ERROR:\n{ls_err}")
-            return
-        if branch_name in ls_out:
-            self.app.say(f"Branch {branch_name} already exists.")
-            return
-        self.app.say(f"Checking out {branch_name}")
-        co_out, co_err = run_git_checkout_new_branch(
-            self.app.app_data.run_path, branch_name, self.commit_info.abbrev_hash
-        )
-        self.app.say(co_out)
-        if co_err:
-            co_err = f"Checkout failed for {self.commit_info.abbrev_hash}:\n{co_err}"
-            self.app.say(f"ERROR:\n{co_err}")
-        self.app.show_current_branch()
+        self.app.checkout_new_branch(self.commit_info.abbrev_hash)
 
 
 class UI(App):
@@ -134,7 +119,6 @@ class UI(App):
         ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
-        # ("t", "try_stuff", "Try"),
         ("u", "toggle_dark", "UI mode"),
         ("x", "exit_app", "Exit"),
     ]
@@ -153,6 +137,7 @@ class UI(App):
             new_commit = Commit(commit_info=commit)
             self.query_one("#commits").mount(new_commit)
         self.say(f"Repository: {self.app_data.run_path}")
+        self.title = "gitramble"
         self.show_current_branch()
 
     @on(events.DescendantBlur)
@@ -200,7 +185,7 @@ class UI(App):
         action, branch_name = action_branch.split(":")
         self.say(f"Branch selected: {branch_name}")
         if action == "change":
-            self.checkout_branch(branch_name)
+            self.checkout_existing_branch(branch_name)
         elif action == "delete":
             self.delete_branch(branch_name)
 
@@ -220,9 +205,6 @@ class UI(App):
         log_area: Collapsible = self.query_one("#log-area")
         log_area.collapsed = not log_area.collapsed
 
-    # def action_try_stuff(self) -> None:
-    #     self.say("blah " * 50)
-
     def action_exit_app(self) -> None:
         self.exit()
 
@@ -231,9 +213,51 @@ class UI(App):
         if err:
             self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
             return
-        self.title = f"gitramble (branch: {cur})"
+        self.sub_title = f"branch: {cur}"
 
-    def checkout_branch(self, branch_name: str) -> None:
+    async def refresh_commits(self) -> None:
+        self.say("Refreshing list of commits from git log.", pop=True)
+        log_output, err = run_git_log(self.app_data.run_path)
+        if err:
+            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+            return
+
+        # Remove existing Commit widgets.
+        commits_list = self.query_one("#commits")
+        await commits_list.remove_children(Commit)
+
+        # Parse the log output and update app_data.
+        log_items = parse_git_log_output(log_output)
+        self.app_data.update_commits(log_items)
+
+        # Add the updated set of Commit widgets to the UI.
+        for commit in self.app_data.get_commits_current():
+            new_commit = Commit(commit_info=commit)
+            await commits_list.mount(new_commit)
+
+    def checkout_new_branch(self, abbrev_hash: str) -> None:
+        branch_name = f"{APP_BRANCH_PREFIX}{abbrev_hash}"
+        ls_out, ls_err = run_git_branch_list(self.app_data.run_path)
+        if ls_err:
+            logging.error(ls_err)
+            self.say(f"ERROR:\n{ls_err}")
+            return
+        if branch_name in ls_out:
+            self.say(f"Branch {branch_name} already exists.")
+            return
+        self.say(f"Checking out {branch_name}")
+        co_out, co_err = run_git_checkout_new_branch(
+            self.app_data.run_path, branch_name, abbrev_hash
+        )
+        self.say(co_out)
+        if co_err:
+            co_err = f"Checkout failed for {abbrev_hash}:\n{co_err}"
+            self.say(f"ERROR:\n{co_err}")
+
+        self.show_current_branch()
+        self.refresh_commits()
+
+    def checkout_existing_branch(self, branch_name: str) -> None:
         _, cur, err = get_branch_info(self.app_data.run_path)
         if err:
             self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
@@ -245,6 +269,7 @@ class UI(App):
         self.say(f"\n{out}", pop=True)
         if err:
             self.say(f"ERRORS:\n{err}", pre="[bold red]")
+        self.refresh_commits()
 
     def delete_branch(self, branch_name: str) -> None:
         _, cur, err = get_branch_info(self.app_data.run_path)
