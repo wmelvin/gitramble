@@ -4,7 +4,7 @@ import logging
 import webbrowser
 from datetime import datetime
 
-from textual import on
+from textual import events, on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.widgets import (
@@ -13,6 +13,7 @@ from textual.widgets import (
     Collapsible,
     Footer,
     Header,
+    Input,
     Label,
     RichLog,
     Static,
@@ -36,15 +37,27 @@ class Commit(Static):
         self.commit_info = commit_info
         self.id = f"c-{commit_info.abbrev_hash}"
 
+    BINDINGS = [
+        ("n", "show_note", "Note"),
+    ]
+
     def compose(self) -> ComposeResult:
-        with Vertical(id="panel"):
-            with Horizontal(id="panel-select"):
-                yield Checkbox()
-                yield Label(self.commit_info.when_str(), id="date")
-            with Horizontal(id="panel-buttons"):
-                yield Button(self.commit_info.abbrev_hash, id="btn-browser")
-                yield Button("Checkout", id="btn-checkout")
-        yield Static(self.commit_info.subject_msg, id="descr")
+        with Horizontal(id="panel-commit"):
+            with Vertical(id="panel"):
+                with Horizontal(id="panel-select"):
+                    yield Checkbox()
+                    yield Label(self.commit_info.when_str(), id="date")
+                with Horizontal(id="panel-buttons"):
+                    yield Button(self.commit_info.abbrev_hash, id="btn-browser")
+                    yield Button("Checkout", id="btn-checkout")
+            yield Static(self.commit_info.subject_msg, id="descr")
+        with Horizontal(id="panel-note"):
+            yield Label("Note:")
+            yield Input(self.commit_info.note, max_length=60, id="input-note")
+
+    def action_show_note(self) -> None:
+        self.query_one("#panel-note").add_class("noted")
+        self.query_one("#input-note").focus()
 
     def on_mount(self) -> None:
         if not self.app.app_data.repo_url:
@@ -52,6 +65,8 @@ class Commit(Static):
         if self.commit_info.selected:
             self.add_class("selected")
             self.query_one(Checkbox).value = True
+        if self.commit_info.note:
+            self.query_one("#panel-note").add_class("noted")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-browser":
@@ -67,6 +82,10 @@ class Commit(Static):
         else:
             self.remove_class("selected")
             self.app.app_data.set_selected(self.commit_info.abbrev_hash, 0)
+
+    @on(Input.Changed)
+    def update_note_change(self, event: Input.Changed) -> None:
+        self.app.app_data.set_note(self.commit_info.abbrev_hash, event.value)
 
     def open_at_url(self) -> None:
         url = self.app.app_data.repo_url
@@ -135,6 +154,12 @@ class UI(App):
             self.query_one("#commits").mount(new_commit)
         self.say(f"Repository: {self.app_data.run_path}")
         self.show_current_branch()
+
+    @on(events.DescendantBlur)
+    def on_descendent_blur(self, event: events.DescendantBlur) -> None:
+        if event.widget.id == "input-note":
+            # Save any pending changes on leaving the Input widget.
+            self.app_data.save_pending_changes()
 
     def say(
         self, message: str, pre: str = "", no_dt: bool = False, pop: bool = False

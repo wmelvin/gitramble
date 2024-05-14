@@ -1,9 +1,41 @@
 
 Commit {
     border-top: solid gray;
-    layout: horizontal;
+    height: auto;
     min-height: 3;
     min-width: 50;
+}
+
+#panel {
+    background: $panel;
+    height: 2;
+    width: 25;
+}
+
+#panel-note {
+    align: left top;
+    height: 1;
+    padding: 0 1;
+    display: none;
+}
+
+#panel-note.noted {
+    display: block;
+}
+
+#panel-note Label {
+    margin-left: 1;
+}
+
+#panel-note Input {
+    border: none;
+    height: 1;
+    margin: 0 1;
+    width: 62;
+}
+
+#panel-commit {
+    height: 2;
 }
 
 #btn-browser, #btn-checkout {
@@ -24,12 +56,6 @@ Checkbox {
     padding: 0;
     padding-bottom: 1;
     max-height: 60%;
-}
-
-#panel {
-    background: $panel;
-    height: 2;
-    width: 25;
 }
 
 #panel-select {
@@ -76,7 +102,7 @@ Checkbox {
 }
 
 
-/* BranchScreen */
+/**** BranchScreen ****/
 
 BranchScreen {
     align: center middle;

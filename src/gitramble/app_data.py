@@ -39,6 +39,7 @@ class AppData:
         self.settings_file = self.data_dir / "settings.csv"
         self.commits_file = self.data_dir / "commits.csv"
         self.commits_data: dict[str, CommitInfo] = {}
+        self._commits_changed: bool = False
         self.load_settings()
         self.save_settings()
 
@@ -114,6 +115,7 @@ class AppData:
                         "note": commit.note,
                     }
                 )
+        self._commits_changed = False
 
     def update_commits(self, log_items: list[GitLogItem]) -> None:
         """Update the commits dictionary from the current git log data.
@@ -165,3 +167,15 @@ class AppData:
             return
         self.commits_data[commit_hash].selected = selected
         self.save_commits()
+
+    def set_note(self, commit_hash: str, note: str) -> None:
+        if commit_hash not in self.commits_data:
+            return
+        self.commits_data[commit_hash].note = note
+        # This may be called for each change to the Input widget
+        # (each character), so do not save to file here.
+        self._commits_changed = True
+
+    def save_pending_changes(self) -> None:
+        if self._commits_changed:
+            self.save_commits()
