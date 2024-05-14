@@ -241,7 +241,7 @@ def run_git_branch_list(run_path: Path) -> tuple[str, str]:
     if result is None:
         errors += "ERROR: Failed to run git command."
     elif result.returncode == 0:
-        output = result.stdout.strip()
+        output = result.stdout
     else:
         errors += f"ERROR ({result.returncode})\n"
         if result.stderr is not None:

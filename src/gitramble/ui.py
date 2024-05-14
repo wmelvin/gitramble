@@ -146,21 +146,36 @@ class UI(App):
             # Save any pending changes on leaving the Input widget.
             self.app_data.save_pending_changes()
 
-    def say(
-        self, message: str, pre: str = "", no_dt: bool = False, pop: bool = False
-    ) -> None:
+    def say(self, message: str, pop: bool = False) -> None:
+        if not message.strip():
+            return
         logging.info("UI: %s", message)
-        dt = "" if no_dt else f"{datetime.now().strftime('%H:%M:%S')} - "
-        self.query_one(RichLog).write(f"{dt}{pre}{message}\n")
+        dt = f"{datetime.now().strftime('%H:%M:%S')} - "
+        self.query_one(RichLog).write(f"{dt}{message}")
         if pop:
             self.query_one("#log-area").collapsed = False
 
+    def show_error(self, error_msg: str | None) -> bool:
+        """Show an error message in the log area. Return True if there was an error.
+
+        Args:
+            error_msg (str): Error message to display.
+
+        Returns:
+            bool: True if there was an error.
+        """
+        if not error_msg:
+            return False
+        logging.error(error_msg)
+        dt = f"{datetime.now().strftime('%H:%M:%S')} - "
+        self.query_one(RichLog).write(f"{dt}[bold red]ERRORS:\n{error_msg}")
+        self.query_one("#log-area").collapsed = False
+        return True
+
     def action_show_branches(self) -> None:
         out, err = run_git_branch_list(self.app_data.run_path)
-        self.say("Branches:", pop=True)
-        self.say(f"\n{out}", pre="[bold]", no_dt=True)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+        self.say(f"Branches:\n{out}", pop=True)
+        self.show_error(err)
 
     def action_change_branch(self) -> None:
         self.open_branch_screen("change")
@@ -170,8 +185,7 @@ class UI(App):
 
     def open_branch_screen(self, action: str) -> None:
         lst, _, err = get_branch_info(self.app_data.run_path)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+        if self.show_error(err):
             return
         if not lst:
             self.say("No branches available.", pop=True)
@@ -183,7 +197,6 @@ class UI(App):
             self.say("Branch selection cancelled.", pop=True)
             return
         action, branch_name = action_branch.split(":")
-        self.say(f"Branch selected: {branch_name}")
         if action == "change":
             self.checkout_existing_branch(branch_name)
         elif action == "delete":
@@ -210,21 +223,19 @@ class UI(App):
 
     def show_current_branch(self) -> None:
         _, cur, err = get_branch_info(self.app_data.run_path)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+        if self.show_error(err):
             return
         self.sub_title = f"branch: {cur}"
 
-    async def refresh_commits(self) -> None:
+    def refresh_commits(self) -> None:
         self.say("Refreshing list of commits from git log.", pop=True)
         log_output, err = run_git_log(self.app_data.run_path)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+        if self.show_error(err):
             return
 
         # Remove existing Commit widgets.
         commits_list = self.query_one("#commits")
-        await commits_list.remove_children(Commit)
+        commits_list.remove_children(Commit)
 
         # Parse the log output and update app_data.
         log_items = parse_git_log_output(log_output)
@@ -233,14 +244,12 @@ class UI(App):
         # Add the updated set of Commit widgets to the UI.
         for commit in self.app_data.get_commits_current():
             new_commit = Commit(commit_info=commit)
-            await commits_list.mount(new_commit)
+            commits_list.mount(new_commit)
 
     def checkout_new_branch(self, abbrev_hash: str) -> None:
         branch_name = f"{APP_BRANCH_PREFIX}{abbrev_hash}"
         ls_out, ls_err = run_git_branch_list(self.app_data.run_path)
-        if ls_err:
-            logging.error(ls_err)
-            self.say(f"ERROR:\n{ls_err}")
+        if self.show_error(ls_err):
             return
         if branch_name in ls_out:
             self.say(f"Branch {branch_name} already exists.")
@@ -250,36 +259,32 @@ class UI(App):
             self.app_data.run_path, branch_name, abbrev_hash
         )
         self.say(co_out)
-        if co_err:
-            co_err = f"Checkout failed for {abbrev_hash}:\n{co_err}"
-            self.say(f"ERROR:\n{co_err}")
+        self.show_error(co_err)
 
         self.show_current_branch()
         self.refresh_commits()
 
     def checkout_existing_branch(self, branch_name: str) -> None:
+        self.say(f"Checkout {branch_name}")
         _, cur, err = get_branch_info(self.app_data.run_path)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+        if self.show_error(err):
             return
         if branch_name == cur:
             self.say("Already on that branch.", pop=True)
             return
         out, err = run_git_checkout_existing_branch(self.app_data.run_path, branch_name)
-        self.say(f"\n{out}", pop=True)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+        self.say(f"{out}", pop=True)
+        self.show_error(err)
         self.refresh_commits()
 
     def delete_branch(self, branch_name: str) -> None:
+        self.say(f"Delete {branch_name}")
         _, cur, err = get_branch_info(self.app_data.run_path)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]", pop=True)
+        if self.show_error(err):
             return
         if branch_name == cur:
             self.say("Cannot delete the current branch.", pop=True)
             return
         out, err = delete_gitramble_branch(self.app_data.run_path, branch_name)
         self.say(f"\n{out}", pop=True)
-        if err:
-            self.say(f"ERRORS:\n{err}", pre="[bold red]")
+        self.show_error(err)
