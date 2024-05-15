@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_BRANCH_PREFIX = "gitramble-"
+APP_BRANCH_PREFIX = "grmbl-"
 
 
 @dataclass

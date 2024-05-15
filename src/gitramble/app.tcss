@@ -124,7 +124,7 @@ BranchScreen {
 #branch-dialog {
     align: center bottom;
     border: solid chocolate;
-    height: 20;
+    height: auto;
     width: 50;
 }
 

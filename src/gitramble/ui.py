@@ -119,6 +119,7 @@ class UI(App):
         ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
+        # ("t", "try_stuff", "Try"),
         # ("u", "toggle_dark", "Mode"),
         ("x", "exit_app", "Exit"),
     ]
@@ -150,8 +151,9 @@ class UI(App):
         if not message.strip():
             return
         logging.info("UI: %s", message)
-        dt = f"{datetime.now().strftime('%H:%M:%S')} - "
-        self.query_one(RichLog).write(f"{dt}{message}")
+        dt = f"[{datetime.now().strftime('%H:%M:%S')}] "
+        rlog = self.query_one(RichLog)
+        rlog.write(f"{dt}{message}\n")
         if pop:
             self.query_one("#log-area").collapsed = False
 
@@ -167,10 +169,16 @@ class UI(App):
         if not error_msg:
             return False
         logging.error(error_msg)
-        dt = f"{datetime.now().strftime('%H:%M:%S')} - "
-        self.query_one(RichLog).write(f"{dt}[bold red]ERRORS:\n{error_msg}")
+        dt = f"[{datetime.now().strftime('%H:%M:%S')}] "
+        rlog = self.query_one(RichLog)
+        rlog.write(f"{dt}[bold red]ERRORS:\n{error_msg}\n")
         self.query_one("#log-area").collapsed = False
+        self.query_one("#log").scroll_end()
         return True
+
+    def action_try_stuff(self) -> None:
+        self.show_error("A test error message.")
+        self.say("Say something.")
 
     def action_show_branches(self) -> None:
         out, err = run_git_branch_list(self.app_data.run_path)
@@ -278,13 +286,13 @@ class UI(App):
         self.refresh_commits()
 
     def delete_branch(self, branch_name: str) -> None:
-        self.say(f"Delete {branch_name}")
         _, cur, err = get_branch_info(self.app_data.run_path)
         if self.show_error(err):
             return
         if branch_name == cur:
             self.say("Cannot delete the current branch.", pop=True)
             return
+        self.say(f"Delete {branch_name}")
         out, err = delete_gitramble_branch(self.app_data.run_path, branch_name)
         self.say(f"\n{out}", pop=True)
         self.show_error(err)
