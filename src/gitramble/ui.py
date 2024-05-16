@@ -120,7 +120,6 @@ class UI(App):
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
         # ("t", "try_stuff", "Try"),
-        # ("u", "toggle_dark", "Mode"),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -177,6 +176,7 @@ class UI(App):
         return True
 
     def action_try_stuff(self) -> None:
+        # Manual testing: Write some messages to the log.
         self.show_error("A test error message.")
         self.say("Say something.")
 
@@ -209,9 +209,6 @@ class UI(App):
             self.checkout_existing_branch(branch_name)
         elif action == "delete":
             self.delete_branch(branch_name)
-
-    # def action_toggle_dark(self) -> None:
-    #     self.dark = not self.dark
 
     def action_filter_selected(self) -> None:
         self.selected_only = not self.selected_only
