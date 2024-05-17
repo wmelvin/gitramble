@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView
@@ -15,6 +16,7 @@ class BranchScreen(ModalScreen[str]):
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
+        Binding("ctrl+s", "screenshot", "Screenshot", show=False),
     ]
 
     def compose(self) -> ComposeResult:
@@ -32,6 +34,9 @@ class BranchScreen(ModalScreen[str]):
     def on_list_view_highlighted(self, hl: ListView.Highlighted) -> None:
         ix = hl.list_view.index
         self.selected_branch = self.branches[ix]
+
+    def action_screenshot(self) -> None:
+        self.app.take_screenshot()
 
     def close_screen(self, branch: str) -> None:
         if branch:

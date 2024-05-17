@@ -178,8 +178,11 @@ class UI(App):
         self.query_one("#log").scroll_end()
         return True
 
-    def action_screenshot(self) -> None:
+    def take_screenshot(self) -> None:
         self.save_screenshot(None, str(Path.home() / "Desktop"))
+
+    def action_screenshot(self) -> None:
+        self.take_screenshot()
 
     def action_test_log(self) -> None:
         self.show_error("A test error message.")
