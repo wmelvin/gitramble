@@ -288,6 +288,7 @@ class UI(App):
         out, err = run_git_checkout_existing_branch(self.app_data.run_path, branch_name)
         self.say(f"{out}", pop=True)
         self.show_error(err)
+        self.show_current_branch()
         self.refresh_commits()
 
     def delete_branch(self, branch_name: str) -> None:
