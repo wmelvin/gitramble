@@ -3,9 +3,11 @@ from __future__ import annotations
 import logging
 import webbrowser
 from datetime import datetime
+from pathlib import Path
 
 from textual import events, on
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.widgets import (
     Button,
@@ -119,7 +121,8 @@ class UI(App):
         ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
-        # ("t", "try_stuff", "Try"),
+        Binding("ctrl+t", "test_log", "Test Log", show=False),
+        Binding("ctrl+s", "screenshot", "Screenshot", show=False),
         ("x", "exit_app", "Exit"),
     ]
 
@@ -175,8 +178,10 @@ class UI(App):
         self.query_one("#log").scroll_end()
         return True
 
-    def action_try_stuff(self) -> None:
-        # Manual testing: Write some messages to the log.
+    def action_screenshot(self) -> None:
+        self.save_screenshot(None, str(Path.home() / "Desktop"))
+
+    def action_test_log(self) -> None:
         self.show_error("A test error message.")
         self.say("Say something.")
 
