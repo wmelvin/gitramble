@@ -24,7 +24,6 @@ from textual.widgets import (
 from gitramble.app_data import AppData, CommitInfo
 from gitramble.branch_screen import BranchScreen
 from gitramble.git_utils import (
-    APP_BRANCH_PREFIX,
     delete_gitramble_branch,
     get_branch_info,
     parse_git_log_output,
@@ -104,7 +103,7 @@ class Commit(Static):
             self.query_one("#btn-browser").disabled = True
 
     def checkout(self) -> None:
-        self.app.checkout_new_branch(self.commit_info.abbrev_hash)
+        self.app.checkout_new_branch(self.commit_info)
 
 
 class UI(App):
@@ -259,8 +258,8 @@ class UI(App):
             new_commit = Commit(commit_info=commit)
             commits_list.mount(new_commit)
 
-    def checkout_new_branch(self, abbrev_hash: str) -> None:
-        branch_name = f"{APP_BRANCH_PREFIX}{abbrev_hash}"
+    def checkout_new_branch(self, commit_info: CommitInfo) -> None:
+        branch_name = commit_info.get_branch_name()
         ls_out, ls_err = run_git_branch_list(self.app_data.run_path)
         if self.show_error(ls_err):
             return
@@ -269,7 +268,7 @@ class UI(App):
             return
         self.say(f"Checking out {branch_name}")
         co_out, co_err = run_git_checkout_new_branch(
-            self.app_data.run_path, branch_name, abbrev_hash
+            self.app_data.run_path, branch_name, commit_info.abbrev_hash
         )
         self.say(co_out)
         self.show_error(co_err)

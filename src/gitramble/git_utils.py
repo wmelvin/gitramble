@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_BRANCH_PREFIX = "grmbl-"
+APP_BRANCH_PREFIX = "gr"
 
 
 @dataclass
@@ -277,7 +278,27 @@ def get_branch_info(run_path: Path) -> tuple[list[str], str, str]:
 
 
 def delete_gitramble_branch(run_path: Path, branch_name: str) -> tuple[str, str]:
-    if not branch_name.startswith(APP_BRANCH_PREFIX):
+    """Delete a branch created by this application.
+
+    Args:
+        run_path (Path): Path to the Git repository.
+        branch_name (str): Name of the branch to delete.
+
+    Returns:
+        tuple[str, str]: Output and error messages.
+
+    The branch name must match the pattern '<prefix>-<sequence>-<hash>'.
+    Where:
+    - '<prefix>' is the prefix (APP_BRANCH_PREFIX).
+    - '<sequence>' is a zero-padded 4-digit number.
+    - '<hash>' is the first 4 characters of the commit hash.
+    """
+    if not branch_name:
+        return "", "Missing branch name."
+
+    pattern = rf"{APP_BRANCH_PREFIX}-\d{{4}}-[0-9a-fA-F]{{4}}"
+
+    if not re.match(pattern, branch_name):
         return "", "Can only delete branches created by this application."
 
     result = run_git(run_path, ["branch", "-d", branch_name])

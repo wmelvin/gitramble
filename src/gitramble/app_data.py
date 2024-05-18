@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from gitramble.git_utils import GitLogItem
+from gitramble.git_utils import APP_BRANCH_PREFIX, GitLogItem
 
 APP_DATA_DIR = ".gitramble"
 
@@ -17,11 +17,15 @@ class CommitInfo:
     author_date: str = ""
     subject_msg: str = ""
     current: int = 0
+    sequence: int = 0
     selected: int = 0
     note: str = ""
 
     def when_str(self) -> datetime:
         return datetime.fromisoformat(self.author_date).strftime("%Y-%m-%d %H:%M")
+
+    def get_branch_name(self) -> str:
+        return f"{APP_BRANCH_PREFIX}-{self.sequence:04d}-{self.abbrev_hash[:4]}"
 
 
 class AppData:
@@ -85,6 +89,7 @@ class AppData:
                     commit.author_date = row.get("author_date", "")
                     commit.subject_msg = row.get("subject_msg", "")
                     commit.current = int(row.get("current", 0))
+                    commit.sequence = int(row.get("sequence", 0))
                     commit.selected = int(row.get("selected", 0))
                     commit.note = row.get("note", "")
                     self.commits_data[commit.abbrev_hash] = commit
@@ -98,6 +103,7 @@ class AppData:
                     "author_date",
                     "subject_msg",
                     "current",
+                    "sequence",
                     "selected",
                     "note",
                 ],
@@ -111,6 +117,7 @@ class AppData:
                         "author_date": commit.author_date,
                         "subject_msg": commit.subject_msg,
                         "current": commit.current,
+                        "sequence": commit.sequence,
                         "selected": commit.selected,
                         "note": commit.note,
                     }
@@ -134,17 +141,20 @@ class AppData:
             commit.current = 0
 
         # Update commits_data from the latest log data.
-        for log_item in log_items:
+        for seq, log_item in enumerate(log_items, start=1):
             if log_item.abbrev_hash in self.commits_data:
                 commit = self.commits_data[log_item.abbrev_hash]
                 commit.subject_msg = log_item.subject_msg
                 commit.current = 1
+                if not commit.sequence:
+                    commit.sequence = seq
             else:
                 self.commits_data[log_item.abbrev_hash] = CommitInfo(
                     abbrev_hash=log_item.abbrev_hash,
                     author_date=log_item.author_date,
                     subject_msg=log_item.subject_msg,
                     current=1,
+                    sequence=seq,
                     selected=0,
                 )
 
