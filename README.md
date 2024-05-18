@@ -1,10 +1,10 @@
 # GitRamble
 
+> Development work in progress.
+
 `gitramble` - Ramble through a project's `git log` history.
 
 A command-line utility that provides a [Textual](https://textual.textualize.io/) UI to select and checkout git commits as new banches. This is for exploring a project's history and checking out the code at selected commits along the way. Most likely this is done in a separate clone of a project's repository.
-
-> Development work in progress.
 
 ### WARNING: Running this might mess up your git repository.
 
