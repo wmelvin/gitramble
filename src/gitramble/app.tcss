@@ -125,7 +125,7 @@ BranchScreen {
     align: center bottom;
     border: solid chocolate;
     height: auto;
-    width: 50;
+    width: 80%;
 }
 
 #branch-list {

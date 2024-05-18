@@ -189,3 +189,36 @@ class AppData:
     def save_pending_changes(self) -> None:
         if self._commits_changed:
             self.save_commits()
+
+    def _commit_matching_branch_name(self, branch_name: str) -> CommitInfo | None:
+        """Return the commit that matches the branch name.
+
+        Args:
+            branch_name (str): The branch name to match.
+
+            Returns:
+            CommitInfo | None: The CommitInfo object that matches the branch name,
+            or None if no match is found.
+        """
+        for commit in self.commits_data.values():
+            if branch_name == commit.get_branch_name():
+                return commit
+        return None
+
+    def add_info_to_branch_names(self, branch_list: list[str]) -> list[str]:
+        """Add commit information to each branch name in the list.
+
+        Args:
+            branch_list (list[str]): A list of branch names.
+
+        Returns:
+            list[str]: A list of branch names with commit information appended.
+        """
+        updated_list = []
+        for bn in branch_list:
+            upd_bn = bn
+            cm = self._commit_matching_branch_name(bn)
+            if cm:
+                upd_bn += f" | {cm.note or cm.subject_msg}"
+            updated_list.append(upd_bn)
+        return updated_list

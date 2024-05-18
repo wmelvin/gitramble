@@ -205,6 +205,7 @@ class UI(App):
         if not lst:
             self.say("No branches available.", pop=True)
             return
+        lst = self.app_data.add_info_to_branch_names(lst)
         self.push_screen(BranchScreen(action, lst), self.branch_screen_closed)
 
     def branch_screen_closed(self, action_branch: str) -> None:

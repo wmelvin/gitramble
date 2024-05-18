@@ -40,6 +40,10 @@ class BranchScreen(ModalScreen[str]):
 
     def close_screen(self, branch: str) -> None:
         if branch:
+            # If branch name has appended info it will be after a pipe symbol.
+            # Use only the part before the pipe.
+            if "|" in branch:
+                branch = branch.split("|")[0].strip()
             self.dismiss(f"{self.action}:{branch}")
         else:
             self.dismiss("")
