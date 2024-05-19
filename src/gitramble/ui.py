@@ -120,9 +120,9 @@ class UI(App):
         ("d", "delete_branch", "Delete"),
         ("f", "filter_selected", "Filter"),
         ("l", "toggle_log", "Log"),
-        Binding("ctrl+t", "test_log", "Test Log", show=False),
-        Binding("ctrl+s", "screenshot", "Screenshot", show=False),
         ("x", "exit_app", "Exit"),
+        # Binding("ctrl+t", "test_log", "Test Log", show=False),
+        Binding("ctrl+s", "screenshot", "Screenshot", show=False),
     ]
 
     def compose(self) -> ComposeResult:
