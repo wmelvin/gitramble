@@ -30,4 +30,8 @@ set dotenv-load
 @checks: lint check test
 
 @tui:
-  pipenv run textual run --dev src/gitramble/cli.py $GRMBL_DIR -u $GRMBL_URL
+  pipenv run textual run --dev src/gitramble/cli.py $GRMBL_DIR -u $GRMBL_URL --ctrl-s
+
+# Run the CLI with the help flag and save the output to temp.txt.
+@help:
+  pipenv run python3 src/gitramble/cli.py --help > temp.txt

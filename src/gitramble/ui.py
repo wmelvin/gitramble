@@ -107,8 +107,9 @@ class Commit(Static):
 
 
 class UI(App):
-    def __init__(self, app_data: AppData) -> None:
+    def __init__(self, app_data: AppData, enable_screenshots: bool = False) -> None:
         self.app_data = app_data
+        self.do_screenshots = enable_screenshots
         self.selected_only = False
         super().__init__()
 
@@ -178,7 +179,8 @@ class UI(App):
         return True
 
     def take_screenshot(self) -> None:
-        self.save_screenshot(None, str(Path.home() / "Desktop"))
+        if self.do_screenshots:
+            self.save_screenshot(None, str(Path.home() / "Desktop"))
 
     def action_screenshot(self) -> None:
         self.take_screenshot()

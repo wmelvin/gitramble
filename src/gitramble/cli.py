@@ -29,6 +29,14 @@ def get_args(arglist=None):
         help="GitHub repository URL.",
     )
 
+    ap.add_argument(
+        "--ctrl-s",
+        dest="enable_screenshots",
+        action="store_true",
+        help="Enable [ctrl]+[s] for saving SVG screenshots in the app. "
+        "Screenshots are saved to the Desktop.",
+    )
+
     return ap.parse_args(arglist)
 
 
@@ -46,11 +54,11 @@ def get_opts(arglist=None) -> tuple[Path, str]:
 
     repo_url = args.repo_url if args.repo_url else ""
 
-    return dir_path, repo_url
+    return dir_path, repo_url, args.enable_screenshots
 
 
 def cli(arglist=None):
-    run_path, repo_url = get_opts(arglist)
+    run_path, repo_url, enable_screenshots = get_opts(arglist)
 
     app_data = AppData(run_path, repo_url)
     rprint(f"Data directory: {app_data.data_dir}")
@@ -67,7 +75,7 @@ def cli(arglist=None):
 
     app_data.update_commits(commits)
 
-    ui = UI(app_data)
+    ui = UI(app_data, enable_screenshots)
     ui.run()
 
 
