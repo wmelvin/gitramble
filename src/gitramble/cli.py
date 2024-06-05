@@ -33,7 +33,7 @@ def get_args(arglist=None):
         "--ctrl-s",
         dest="enable_screenshots",
         action="store_true",
-        help="Enable [ctrl]+[s] for saving SVG screenshots in the app. "
+        help="Enable [Ctrl]+[s] for saving SVG screenshots in the app. "
         "Screenshots are saved to the Desktop.",
     )
 
