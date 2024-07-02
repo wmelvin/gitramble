@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import shutil
 import subprocess
@@ -55,8 +56,10 @@ def run_git(run_path: Path, args: list[str]) -> subprocess.CompletedProcess:
 
     cmds = [git_exe, *args]
 
-    return subprocess.run(
-        cmds,  # noqa: S603
+    logging.info("PS: %s", " ".join(cmds))
+
+    return subprocess.run(  # noqa: S603
+        cmds,
         cwd=str(run_path),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
