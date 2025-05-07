@@ -13,7 +13,9 @@ keywords = [ "git", "tui" ]
 authors = [
   { name = "Bill Melvin", email = "bill@billmelvin.com" },
 ]
-dependencies = [ "textual" ]
+dependencies = [
+ "textual",
+]
 
 [project.scripts]
 gitramble = "gitramble.cli:cli"
@@ -63,4 +65,13 @@ ignore = ["ISC001"]
 "**/test_*.py" = [
     "S101",    # assert
     "PLR2004", # magic number
+]
+
+[dependency-groups]
+dev = [
+    "build>=1.2.2.post1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.11.8",
+    "textual-dev>=1.6.1",
 ]
